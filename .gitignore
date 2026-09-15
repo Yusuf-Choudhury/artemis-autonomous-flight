@@ -1,0 +1,19 @@
+# C++ binaries & build artifacts
+*.o
+*.out
+*.exe
+core/bin/
+
+# Python virtual environments & bytecode
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Node / Cockpit dependencies
+node_modules/
+dist/
+
+# OS metadata
+.DS_Store
+Thumbs.db
