@@ -1,60 +1,51 @@
 #include <iostream>
-#include <iomanip>
+#include <vector>
 #include "physics_engine.hpp"
+#include "rk4.hpp"
+#include "telemetry.hpp"
+
+// Instantaneous Earth gravity accleration calculation for RK4
+Vector3 compute_earth_acceleration(const Vector3& pos) {
+    const double G = 6.67430e-11;
+    const double earth_mass = 5.972e24;
+    double r = pos.magnitude();
+    if (r < 1.0) return Vector3(0, 0, 0);
+
+    double a = (G * earth_mass) / (r * r);
+    return pos.normalize() * (-a);
+}
 
 int main() {
-    PhysicsEngine sim;
-
-    // 1. Earth at origin (0, 0, 0)
-    CelestialBody earth(
-        "Earth",
-        5.972e24,                // Mass (Kg)
-        6371000.0,               // Radius (m)
-        Vector3(0, 0, 0),        // Position (m)
-        Vector3(0, 0, 0)         // Velocity (m/s)
+    // Initial Orion capsule state at 400 km Low Earth Orbit
+    State orion_state(
+        Vector3(6771000.0, 0.0, 0.0), // 6,371 km radius + 400 km altitude 
+        Vector3(0.0, 7670.0, 0.0)       // ~7.67 km/s circular orbit speed
     );
 
-    // 2. Moon at lunar distance (~384,400 km)
-    CelestialBody moon(
-        "Moon",
-        7.34e33,                // Mass (Kg)
-        1737400.0,              // Radius (m)
-        Vector3(384400000.0, 0, 0),
-        Vector3(0, 1022.0, 0)   // Orbital speed (~1.022 km/s)
-    );
-
-    // 3. Artemis Orion in Low Earth Orbit (~400 km altitude)
     CelestialBody orion(
-        "Artemis-Orion",        
-        10400.0,                // Mass (Kg)
-        5.0,                    // Radius (m)
-        Vector3(6771000.0, 0, 0),
-        Vector3(0, 7670.0, 0)   // Circular orbital velocity (~7.67 km/s)
+        "Artemis-Orion",
+        10400.0,
+        5.0,
+        orion_state.x,
+        orion_state.v
     );
 
-    sim.add_body(earth);
-    sim.add_body(moon);
-    sim.add_body(orion);
+    double dt = 0.1;             // High-precision 100ms time step
+    double sim_time = 0.0;
+    double fuel_kg = 2000.0;     // Orion reserve RCS propellant
 
-    std::cout << "--- ARTEMIS ORBITAL SIMULATION INITIATED ---\n";
-    std::cout << std::fixed << std::setprecision(2);
+    // Run 600 iterations ( 1 minute of simulated mission time)
+    for (int step = 0; step <= 600; ++step) {
+        orion_state = RK4Integrator::integrate(orion_state, dt, compute_earth_acceleration);
 
-    double dt = 1.0;            // 1-second physics time step
-    int total_steps = 100;      // run 100 simulation seconds
+        orion.position = orion_state.x;
+        orion.velocity = orion_state.v;
 
-    for (int step = 0; step < total_steps; ++step) {
-        sim.step(dt);
+        // Emit telemetry packet at 10 Hz (every step)
+        std::string packet = TelemetryLogger::serialize_craft(sim_time, orion, fuel_kg);
+        std::cout << packet << std::endl;
 
-        // Telemetry readout of the Orion craft every 20 seconds
-        if (step % 20 == 0) {
-            CelestialBody& craft = sim.bodies[2];
-            double dist_from_earth = craft.position.magnitude() / 1000.0;
-            double speed = craft.velocity.magnitude();
-
-            std::cout << "T+" << step << "s | Alt: "
-                      << (dist_from_earth - 6371.0) << " km | Speed: "
-                      << speed << " m\s/n";
-        }
+        sim_time += dt;
     }
 
     return 0;
