@@ -3,41 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Artemis Mission Control HUD</title>
+    <title>Artemis Mission Control | Prosperity API</title>
+    <!-- Load Three.js 3D Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
-        body { margin: 0; overflow: hidden; background: #020208; font-family: 'Courier New', Courier, monospace; }
-        #canvas-container { width: 100vw; height: 100vh; }
-        #hud {
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background-color: #020205; 
+            font-family: 'Courier New', Courier, monospace; 
+        }
+        
+        /* Aerospace Glass-Morphism Dashboard */
+        #ui-container {
             position: absolute;
             top: 20px;
             left: 20px;
-            color: #00ffcc;
-            background: rgba(8, 12, 24, 0.85);
+            background: rgba(10, 25, 47, 0.85); /* Deep space blue/grey */
             border: 1px solid #00ffcc;
-            padding: 18px;
-            border-radius: 6px;
-            box-shadow: 0 0 20px rgba(0, 255, 204, 0.25);
-            pointer-events: none;
-            min-width: 280px;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0, 255, 204, 0.15);
+            width: 320px;
+            backdrop-filter: blur(5px);
         }
-        .metric-title { font-size: 16px; font-weight: bold; border-bottom: 1px solid #00ffcc; padding-bottom: 6px; margin-bottom: 10px; }
-        .metric { font-size: 13px; margin: 6px 0; display: flex; justify-content: space-between; }
-        .val { color: #ffffff; font-weight: bold; }
-        .status-online { color: #00ff66; }
+
+        h1 { 
+            margin-top: 0; 
+            font-size: 1.2rem; 
+            text-transform: uppercase; 
+            letter-spacing: 2px; 
+            color: #00ffcc;
+            border-bottom: 1px solid rgba(0, 255, 204, 0.3); 
+            padding-bottom: 12px; 
+            margin-bottom: 20px;
+        }
+
+        .telemetry-row { 
+            display: flex; 
+            justify-content: space-between; 
+            margin-bottom: 12px; 
+            font-size: 0.95rem; 
+        }
+
+        .label { color: #8892b0; }
+        .value { font-weight: bold; color: #e6f1ff; }
+        
+        .status-live { 
+            color: #00ffcc; 
+            font-weight: bold; 
+            text-shadow: 0 0 8px rgba(0, 255, 204, 0.6);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
     </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
-    <div id="hud">
-        <div class="metric-title">ARTEMIS I: FLIGHT TELEMETRY</div>
-        <div class="metric">STATUS: <span id="status" class="val status-online">CONNECTING...</span></div>
-        <div class="metric">MISSION TIME: <span id="time" class="val">0.00 s</span></div>
-        <div class="metric">ORBIT SPEED: <span id="speed" class="val">0.00 m/s</span></div>
-        <div class="metric">X POS: <span id="posX" class="val">0.00 km</span></div>
-        <div class="metric">Y POS: <span id="posY" class="val">0.00 km</span></div>
-        <div class="metric">FUEL MASS: <span id="fuel" class="val">2000 kg</span></div>
+
+    <!-- Heads Up Display (HUD) -->
+    <div id="ui-container">
+        <h1>Artemis I: Auto-Nav</h1>
+        <div class="telemetry-row">
+            <span class="label">API STATUS:</span>
+            <span class="status-live">SECURE UPLINK</span>
+        </div>
+        <div class="telemetry-row">
+            <span class="label">MISSION TIME:</span>
+            <span class="value" id="time">0.00 s</span>
+        </div>
+        <div class="telemetry-row">
+            <span class="label">ORBIT SPEED:</span>
+            <span class="value" id="speed">0.00 m/s</span>
+        </div>
+        <div class="telemetry-row">
+            <span class="label">X POS:</span>
+            <span class="value" id="x">0.00 km</span>
+        </div>
+        <div class="telemetry-row">
+            <span class="label">Y POS:</span>
+            <span class="value" id="y">0.00 km</span>
+        </div>
+        <div class="telemetry-row">
+            <span class="label">FUEL MASS:</span>
+            <span class="value" id="fuel">0.00 kg</span>
+        </div>
     </div>
-    <div id="canvas-container"></div>
-    <script src="./src/app.js"></script>
+
+    <!-- Load the 3D Engine -->
+    <script src="app.js"></script>
 </body>
 </html>
