@@ -1,54 +1,59 @@
-#ifndef RK4_HPP
-#define RK4_HPP
-
-#include "vector3.hpp"
-
-struct Derivative {
-    Vector3 dx; // Velocity (rate of chnage of position)
-    Vector3 dv; // Acceleration (rate of change of velocity)
-
-    Derivative() : dx(0, 0, 0), dv(0, 0, 0) {}
-    Derivative(Vector3 velocity, Vector3 acceleration) : dx(velocity), dv(acceleration) {}
-};
-
-struct State {
-    Vector3 x;  // Position
-    Vector3 v;  // Velocity
-
-    State() : x(0, 0, 0), v(0, 0, 0) {}
-    State(Vector3 pos, Vector3 vel) : x(pos), v(vel) {}
-};
+#pragma once
+#include "physics_engine.hpp"
+#include "atmosphere.hpp"
+#include "celestial.hpp"
 
 class RK4Integrator {
-public:
-    // Evaluate state derivatives given an initial state, offset, and instantaneous acceleration
-    static Derivative evaluate(const State& initial, double dt, const Derivative& d, Vector3 (*accel_func)(const Vector3&)) {
-        State state;
-        state.x = initial.x + (d.dx * dt);
-        state.v = initial.v + (d.dv * dt);
+private:
+    static Derivative evaluate(const CraftState& state, double dt, const Derivative& d) {
+        CraftState next_state;
+        next_state.position = state.position + d.dx * dt;
+        next_state.velocity = state.velocity + d.dv * dt;
+        next_state.mass = state.mass; // Mass stays constant during passive flight
 
-        Derivative output;
-        output.dx = state.v;
-        output.dv = accel_func(state.x);
-        return output;
+        // 1. Standard Point-Mass Gravity
+        Vector3 gravity_accel = calculate_gravity(next_state.position);
+
+        // 2. Advanced: Earth's Equatorial Bulge (J2 Perturbation)
+        Vector3 j2_accel = CelestialMechanics::calculate_j2_effect(next_state.position);
+
+        // 3. Environmental: Atmospheric Drag
+        Vector3 drag_accel = Atmosphere::calculate_drag(next_state, 2.2, 15.0);
+
+        // Total Acceleration vector applied to the spacecraft
+        Vector3 total_accel = gravity_accel + j2_accel + drag_accel;
+
+        return Derivative{
+            next_state.velocity,
+            total_accel
+        };
     }
 
-    // Integrate state across time step dt using 4 weight slopes
-    static State integrate(const State& state, double dt, Vector3 (*accel_func)(const Vector3&)) {
-        Derivative a = evaluate(state, 0.0, Derivative(), accel_func);
-        Derivative b = evaluate(state, dt * 0.5, a, accel_func);
-        Derivative c = evaluate(state, dt * 0.5, b, accel_func);
-        Derivative d = evaluate(state, dt, c, accel_func);
+    static Vector3 calculate_gravity(const Vector3& pos) {
+        double r_mag = pos.magnitude();
+        if (r_mag == 0.0) return Vector3(0.0, 0.0, 0.0);
 
-        // Weighted slope: dxdt = (a.dx + 2*(b.dx + c.dx) + d.dx) / 6
-        Vector3 dxdt = (a.dx + (b.dx + c.dx) * 2.0 + d.dx) * (1.0 / 6.0);
-        Vector3 dvdt = (a.dv + (b.dv + c.dv) * 2.0 + d.dv) * (1.0 / 6.0);
+        double factor = -MU / (r_mag * r_mag * r_mag);
+        return pos * factor;
+    }
 
-        State result;
-        result.x = state.x + (dxdt * dt);
-        result.v = state.v + (dvdt * dt);
-        return result;
+public:
+    static CraftState step(const CraftState& state, double dt) {
+        Derivative a = evaluate(state, 0.0, Derivative());
+        Derivative b = evaluate(state, dt * 0.5, a);
+        Derivative c = evaluate(state, dt * 0.5, b);
+        Derivative d = evaluate(state, dt, c);
+
+        Vector3 d_pos_weighted = (a.dx + (b.dx + c.dx) * 2.0 + d.dx) * (dt / 6.0);
+        Vector3 d_vel_weighted = (a.dv + (b.dv + c.dv) * 2.0 + d.dv) * (dt / 6.0);
+
+        CraftState new_state;
+        new_state.time = state.time + dt;
+        new_state.position = state.position + d_pos_weighted;
+        new_state.velocity = state.velocity + d_vel_weighted;
+        new_state.mass = state.mass;
+        new_state.fuel = state.fuel;
+
+        return new_state;
     }
 };
-
-#endif

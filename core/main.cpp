@@ -1,51 +1,41 @@
 #include <iostream>
-#include <vector>
-#include "physics_engine.hpp"
+#include <thread>
+#include <chrono>
 #include "rk4.hpp"
-#include "telemetry.hpp"
-
-// Instantaneous Earth gravity accleration calculation for RK4
-Vector3 compute_earth_acceleration(const Vector3& pos) {
-    const double G = 6.67430e-11;
-    const double earth_mass = 5.972e24;
-    double r = pos.magnitude();
-    if (r < 1.0) return Vector3(0, 0, 0);
-
-    double a = (G * earth_mass) / (r * r);
-    return pos.normalize() * (-a);
-}
+#include "guidance.hpp"
 
 int main() {
-    // Initial Orion capsule state at 400 km Low Earth Orbit
-    State orion_state(
-        Vector3(6771000.0, 0.0, 0.0), // 6,371 km radius + 400 km altitude 
-        Vector3(0.0, 7670.0, 0.0)       // ~7.67 km/s circular orbit speed
-    );
+    // Initialize spacecraft state in Low Earth Orbit (LEO)
+    CraftState state;
+    state.time = 0.0;
+    state.position = Vector3(6755000.0, 0.0, 0.0); 
+    state.velocity = Vector3(0.0, 7670.0, 0.0);     
+    state.mass = 2500.0;
+    state.fuel = 2000.0;
 
-    CelestialBody orion(
-        "Artemis-Orion",
-        10400.0,
-        5.0,
-        orion_state.x,
-        orion_state.v
-    );
+    double dt = 1.0; // 1-second simulation step
 
-    double dt = 0.1;             // High-precision 100ms time step
-    double sim_time = 0.0;
-    double fuel_kg = 2000.0;     // Orion reserve RCS propellant
+    while (true) {
+        // Run standard RK4 gravitational physics
+        state = RK4Integrator::step(state, dt);
 
-    // Run 600 iterations ( 1 minute of simulated mission time)
-    for (int step = 0; step <= 600; ++step) {
-        orion_state = RK4Integrator::integrate(orion_state, dt, compute_earth_acceleration);
+        // Autonomous test maneuver: Execute a minor orbital correction burn at t = 500s
+        if (static_cast<int>(state.time) == 500) {
+            GuidanceSystem::apply_burn(state, 15.0, 50.0); // 15 m/s burn, 50kg fuel
+        }
 
-        orion.position = orion_state.x;
-        orion.velocity = orion_state.v;
+        // Output production-grade JSON telemetry stream
+        std::cout << "{\"t\":" << state.time 
+                  << ", \"name\":\"Artemis-Orion\""
+                  << ", \"pos\":{\"x\":" << state.position.x << ",\"y\":" << state.position.y << ",\"z\":" << state.position.z << "}"
+                  << ", \"vel\":{\"x\":" << state.velocity.x << ",\"y\":" << state.velocity.y << ",\"z\":" << state.velocity.z << "}"
+                  << ", \"speed\":" << state.velocity.magnitude() 
+                  << ", \"fuel\":" << state.fuel << "}" << std::endl;
 
-        // Emit telemetry packet at 10 Hz (every step)
-        std::string packet = TelemetryLogger::serialize_craft(sim_time, orion, fuel_kg);
-        std::cout << packet << std::endl;
+        std::cout << std::flush;
 
-        sim_time += dt;
+        // Throttle to 60 FPS real-time
+        std::this_thread::sleep_for(std::chrono::milliseconds(16));
     }
 
     return 0;

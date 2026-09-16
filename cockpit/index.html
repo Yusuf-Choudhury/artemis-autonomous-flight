@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Artemis Mission Control HUD</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #020208; font-family: 'Courier New', Courier, monospace; }
+        #canvas-container { width: 100vw; height: 100vh; }
+        #hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #00ffcc;
+            background: rgba(8, 12, 24, 0.85);
+            border: 1px solid #00ffcc;
+            padding: 18px;
+            border-radius: 6px;
+            box-shadow: 0 0 20px rgba(0, 255, 204, 0.25);
+            pointer-events: none;
+            min-width: 280px;
+        }
+        .metric-title { font-size: 16px; font-weight: bold; border-bottom: 1px solid #00ffcc; padding-bottom: 6px; margin-bottom: 10px; }
+        .metric { font-size: 13px; margin: 6px 0; display: flex; justify-content: space-between; }
+        .val { color: #ffffff; font-weight: bold; }
+        .status-online { color: #00ff66; }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <div id="hud">
+        <div class="metric-title">ARTEMIS I: FLIGHT TELEMETRY</div>
+        <div class="metric">STATUS: <span id="status" class="val status-online">CONNECTING...</span></div>
+        <div class="metric">MISSION TIME: <span id="time" class="val">0.00 s</span></div>
+        <div class="metric">ORBIT SPEED: <span id="speed" class="val">0.00 m/s</span></div>
+        <div class="metric">X POS: <span id="posX" class="val">0.00 km</span></div>
+        <div class="metric">Y POS: <span id="posY" class="val">0.00 km</span></div>
+        <div class="metric">FUEL MASS: <span id="fuel" class="val">2000 kg</span></div>
+    </div>
+    <div id="canvas-container"></div>
+    <script src="./src/app.js"></script>
+</body>
+</html>
