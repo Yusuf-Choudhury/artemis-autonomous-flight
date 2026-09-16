@@ -76,7 +76,7 @@ func main() {
 		log.Println("[INFO] WebGL Cockpit Connected - STREAMING LIVE")
 
 		for {
-			_, _, err := conn.ReadMessage()
+			_, msg, err := conn.ReadMessage()
 			if err != nil {
 				hub.mutex.Lock()
 				delete(hub.clients, conn)
@@ -84,6 +84,13 @@ func main() {
 				conn.Close()
 				log.Println("[WARN] WebGL Cockpit Disconnected")
 				break
+			}
+
+			// NEW: Intercept AI Commands (Uplink)
+			if len(msg) > 0 {
+				log.Println("[UPLINK] AI Command Received:", string(msg))
+				// Write the command to a file for C++ to read
+				os.WriteFile("uplink.json", msg, 0644)
 			}
 		}
 	})
