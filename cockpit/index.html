@@ -1,100 +1,174 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang=""en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Artemis Mission Control | Prosperity API</title>
-    <!-- Load Three.js 3D Library -->
+    <meta name="viewport" content="width=device-width, intial-scale=1.0">
+    <title>Artemis MOC | Autonomous Flight Operations</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
-        body { 
-            margin: 0; 
-            overflow: hidden; 
-            background-color: #020205; 
-            font-family: 'Courier New', Courier, monospace; 
+        :root {
+            --bg-glass: rgba(10, 14, 23, 0.88)
+            --border-cyan: #00d2ff;
+            --border-green: #00ff88;
+            --border-amber: #ffaa00;
+            --accent-red: #ff3344;
+            --text-main: #e2e8f0;
+            --text-dim: #64748b;
         }
-        
-        /* Aerospace Glass-Morphism Dashboard */
-        #ui-container {
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            overflow: hidden;
+            background: #020408;
+            font-family: 'Consolas', 'Courier New', monospace;
+            color: var(--text-main);
+            user-select: none;
+        }
+
+        /*Tactical Nasa MOC Grid */
+        .hud-overlay {
             position: absolute;
-            top: 20px;
-            left: 20px;
-            background: rgba(10, 25, 47, 0.85); /* Deep space blue/grey */
-            border: 1px solid #00ffcc;
-            padding: 25px;
-            border-radius: 8px;
-            box-shadow: 0 0 20px rgba(0, 255, 204, 0.15);
-            width: 320px;
-            backdrop-filter: blur(5px);
+            inset: 0;
+            pointer-events: none;
+            padding: 16px;
+            display: grid;
+            grid-template-columns: 360px 1fr 340px;
+            grid-template-rows: 60px 1fr 140px;
+            gap: 16px;
         }
 
-        h1 { 
-            margin-top: 0; 
-            font-size: 1.2rem; 
-            text-transform: uppercase; 
-            letter-spacing: 2px; 
-            color: #00ffcc;
-            border-bottom: 1px solid rgba(0, 255, 204, 0.3); 
-            padding-bottom: 12px; 
-            margin-bottom: 20px;
+        .panel {
+            background: var(--bg-glass);
+            border: 1px solid rgba(0, 210, 255, 0.25);
+            border-radius: 4px;
+            backdrop-filter: blur(10px);
+            padding: 14 px;
+            box-shadow: 0 0 24px rgba(0, 0, 0, 0.6);
+            pointer-events:auto;
         }
 
-        .telemetry-row { 
-            display: flex; 
-            justify-content: space-between; 
-            margin-bottom: 12px; 
-            font-size: 0.95rem; 
+        .header-bar {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 2px solid var(--border-cyan);
+            background: rgba(8, 12, 20, 0.95);
         }
 
-        .label { color: #8892b0; }
-        .value { font-weight: bold; color: #e6f1ff; }
-        
-        .status-live { 
-            color: #00ffcc; 
-            font-weight: bold; 
-            text-shadow: 0 0 8px rgba(0, 255, 204, 0.6);
-            animation: pulse 2s infinite;
+        .title-group { display: flex; align-items: center; gap 14px; }
+        .badge {
+            background: #00d2ff22;
+            color: var(--border-cyan);
+            padding: 3px 8 px;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            letter-spacing: 1px;
+            border: 1px solid var(--vorder-cyan);
         }
 
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
+        .status-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: var(--accent-green);
         }
+        .pulse-dot {
+            width: 8px;
+            height:  8px;
+            border-radius: 50%;
+            background: var(--accent-green);
+            box-shadow: 0 0 10px var(--accent-green);
+        }
+        @keyframes blink { 0% 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+        /* Telemetry Readouts */
+        .section-title {
+            font-size: 0.75rem;
+            color: var(--border-cyan);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 4px;
+        }
+
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+        }
+        .data-label {color: var(--text-dim); }
+        .data-val {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #fff;
+            text-shadow: 0 0 6px rgba(0, 210, 255, 0.3);
+        }
+
+        /* Subsystem Health Grid */
+        .subsystem-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            text-align: center;
+        }
+        .card-name {font-size: 0.7rem; color: var(--text-dim); }
+        .card-status {font-size: 0.85rem; font-weight: bold; margin-top: 3px; }
+        .nominal { color: var(--accent-green); }
+        .standby { color: var(--accent-amber); }
+
+        /* Terminal Logs at Bottom */
+        .bottom-bar {
+            grid-column: 1 / -1;
+            display: flex;
+            gap: 16px;
+        }
+        .event-log {
+            flex: 1;
+            font-size: 0.8rem;
+            color: #94a3b8;
+            overflow-y: auto;
+            line-height: 1.5;
+        }
+        .event-log span.ts {color: var(--border-cyan); }
+        .event-log span.warn { color: var(--accent-amber); } 
+        .event-log span.crit { color: var(--accent-green); } 
     </style>
 </head>
 <body>
+    <div class="hud-overlay">
+        <!-- Top Bar -->
+        <header class="panel header-bar">         
+            <div class="title-group">      
+                <span class=""badge">NASA / ARTEMIS PROGRAM</span>
+                <strong>MISSION OPERATIONS CONTROL: ORION-1</strong>
+            </div>
+        </header>
 
-    <!-- Heads Up Display (HUD) -->
-    <div id="ui-container">
-        <h1>Artemis I: Auto-Nav</h1>
-        <div class="telemetry-row">
-            <span class="label">API STATUS:</span>
-            <span class="status-live">SECURE UPLINK</span>
-        </div>
-        <div class="telemetry-row">
-            <span class="label">MISSION TIME:</span>
-            <span class="value" id="time">0.00 s</span>
-        </div>
-        <div class="telemetry-row">
-            <span class="label">ORBIT SPEED:</span>
-            <span class="value" id="speed">0.00 m/s</span>
-        </div>
-        <div class="telemetry-row">
-            <span class="label">X POS:</span>
-            <span class="value" id="x">0.00 km</span>
-        </div>
-        <div class="telemetry-row">
-            <span class="label">Y POS:</span>
-            <span class="value" id="y">0.00 km</span>
-        </div>
-        <div class="telemetry-row">
-            <span class="label">FUEL MASS:</span>
-            <span class="value" id="fuel">0.00 kg</span>
-        </div>
-    </div>
+        <!-- Left Column: Orbital Dynamics -->
+        <aside class="panel">         
+            <div class="section-title">Orbital Trajectory & Dynamics</div>
+            <div class="data-row"><span class="data-label">MISSION TIME (MET)</span></span class="data-val" id="time">0.00 s</span></div>
+            <div class="data-row"><span class="data-label">ALTITUDE (MSL)</span></span class="data-val" id="alt">0.00 km<span></div>
+            <div class="data-row"><span class="data-label">ORBITAL VELOCITY</span></span class="data-val" id="speed">0.00 m/s</span></div>
+            <div class="data-row"><span class="data-label">INERTIAL X</span><span class="data-val" id="x">0.00 km</span></div>
+            <div class="data-row"><span class="data-label">INERTIAL Y</span><span class="data-val" id="y">0.00 km</span></div>
+            <div class="data-row"><span class="data-label">INERTIAL Z</span><span class="data-val" id="z">0.00 km</span></div>
 
-    <!-- Load the 3D Engine -->
-    <script src="app.js"></script>
-</body>
-</html>
+            <div class="section-title" style="margin-top: 18px;">Propulsion & Mass</div>
+            <div class="data-row"><span class="data-label">PROPRLLANT RESERVE</span><span class="data-val" id=""fuel">2000.0 kg</span></div>
+            <div class="data-row"><span class="data-label">VEHICLE WET MASS</span></span class="data-val" id="mass">4500.0 kg</span></div>
+            <div class="data-row"><span class="data-label">EST. DELTA-V LEFT</span><span class="data-val" id="deltav">1,240 m/s</span></div>
+        </aside>
+
+        <div></div> <!-- Center Canvas spacer -->
+
+        <!-- Right Column: Substsyems & Guidance Status -->
+        <aside class="panel">
+            <div class="section-title">Autonomous Guidance & Safety</div>
+            <div class="data-row"><span class="data-label">GUIDANCE MODE</span><span class="data-val" style="color:var(--border-cyan)">AI-OVERWATCH</span></div>
+            <div class="data-row"><span class="data-label">SAFETY FIREWALL</span><span class="data-val"
